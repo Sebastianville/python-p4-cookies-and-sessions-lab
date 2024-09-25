@@ -22,13 +22,25 @@ def clear_session():
 
 @app.route('/articles')
 def index_articles():
+    articles = [article.to_dict() for article in Article.query.all()]
+    return make_response(articles, 200)
 
-    pass
-
-@app.route('/articles/<int:id>')
+@app.route('/articles/<int:id>', methods=['GET'])
 def show_article(id):
+    # Initialize page_views in session
+   
+    session["page_views"] = session.get("page_views", 0) + 1  #This line is trying to tell us this: session['page_views'] = session['page_views'] if 'page_views' in session else 0. It is considrered a ternary operation. This line checks if 'page_views' exists in session. If it does, it uses that value; if not, it sets it to 0.So, while session.get('page_views', 0) isn’t technically a ternary operator, it serves a similar purpose of providing a default value when the key is not found. The plus one is allowing us to increment the view count right after fetching it from the session.
 
-    pass
+
+    # Check if user exceeded the limit
+    if session["page_views"] > 3:
+        return jsonify({"message": "Maximum pageview limit reached"}), 401
+
+    article = Article.query.filter_by(id=id).first()
+    if article:
+        return make_response(article.to_dict(), 200)
+    else:
+        return jsonify({"message": "Article not found"}), 404 #in case the article does not exist
 
 if __name__ == '__main__':
     app.run(port=5555)
